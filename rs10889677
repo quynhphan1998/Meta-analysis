@@ -1,0 +1,167 @@
+specific_snp <- "rs10889677"
+> 
+> # Subset the data for the specific SNP
+> snp_data <- subset(data, snp == specific_snp)
+> 
+> data <- snp_data
+> 
+> 
+> # Display the first few rows of the data
+> head(data)
+# A tibble: 2 × 20
+    No. Study    Title country mirna snp   snp_po homo_geno_1 homo_geno_2 hetero_geno race  homo1_cas homo2_cas
+  <dbl> <chr>    <chr> <chr>   <chr> <chr> <chr>  <chr>       <chr>       <chr>       <chr>     <dbl>     <dbl>
+1   264 Wang L,… A mi… China   let7… rs10… targe… AA          CC          CA          China       267        42
+2   392 Zheng J… Func… China   let7f rs10… targe… AA          CC          CA          China       410        57
+# ℹ 7 more variables: hetero_cas <dbl>, totalcase <dbl>, homo1_co <dbl>, homo2_co <dbl>, hetero_co <dbl>,
+#   totalcontrol <dbl>, p_HWE_co <chr>
+> # Example data
+> # A tibble: 6 × 8
+> #  SNP       Study               AA_case aa_case Aa_case AA_control aa_control Aa_control
+> #  <chr>     <chr>                 <dbl>   <dbl>   <dbl>      <dbl>      <dbl>      <dbl>
+> #1 rs2910164 A Nejati-Azar, 2018      74      42      84         64         42         94
+> #2 rs2910164 Ahmad M, 2019            47      94     159        131         42        127
+> #3 rs2910164 Bansal C, 2014           82       4      35         84          8         72
+> #4 rs2910164 Bodal VK, 2017           52       0      46         60          0         39
+> #5 rs2910164 Ekram SN, 2023           16       4      56         30          6         42
+> #6 rs2910164 Hu Z, 2009              329     165     515        362        180        551
+> 
+> # Allelic model: (A allele vs a allele)
+> data$A_case <- 2*data$homo1_cas + data$hetero_cas
+> data$a_case <- 2*data$homo2_cas + data$hetero_cas
+> data$A_control <- 2*data$homo1_co +data$hetero_co
+> data$a_control <- 2*data$homo2_co +data$hetero_co
+> 
+> meta_allelic <- metabin(event.e = data$A_case, n.e = data$A_case + data$a_case,
++                         event.c = data$A_control, n.c = data$A_control + data$a_control,
++                         studlab = data$Study, sm = "OR", method = "MH")
+> 
+> # Print summary and create forest plot
+> summary(meta_allelic)
+                  OR           95%-CI %W(common) %W(random)
+Wang L, 2012  1.2651 [1.0426; 1.5350]       38.2       36.9
+Zheng J, 2012 1.4162 [1.2215; 1.6420]       61.8       63.1
+
+Number of studies: k = 2
+Number of observations: o = 5264 (o.e = 2590, o.c = 2674)
+Number of events: e = 3632
+
+                         OR           95%-CI    z  p-value
+Common effect model  1.3585 [1.2079; 1.5278] 5.11 < 0.0001
+Random effects model 1.3584 [1.2079; 1.5278] 5.11 < 0.0001
+
+Quantifying heterogeneity:
+ tau^2 = 0; tau = 0; I^2 = 0.0%; H = 1.00
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 0.83    1  0.3636
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_allelic)
+> 
+> # Dominant model: (AA + Aa vs aa)
+> data$Dominant_case <- data$homo1_cas + data$hetero_cas
+> data$Dominant_control <- data$homo1_co + data$hetero_co
+> 
+> meta_dominant <- metabin(event.e = data$Dominant_case, n.e = data$Dominant_case + data$homo2_cas,
++                          event.c = data$Dominant_control, n.c = data$Dominant_control + data$homo2_co,
++                          studlab = data$Study, sm = "OR", method = "MH")
+> 
+> # Print summary and create forest plot
+> summary(meta_dominant)
+                  OR           95%-CI %W(common) %W(random)
+Wang L, 2012  1.1826 [0.7689; 1.8189]       43.2       46.7
+Zheng J, 2012 2.0301 [1.4524; 2.8377]       56.8       53.3
+
+Number of studies: k = 2
+Number of observations: o = 2632 (o.e = 1295, o.c = 1337)
+Number of events: e = 2371
+
+                         OR           95%-CI    z p-value
+Common effect model  1.6641 [1.2798; 2.1636] 3.80  0.0001
+Random effects model 1.5770 [0.9297; 2.6751] 1.69  0.0911
+
+Quantifying heterogeneity:
+ tau^2 = 0.1073; tau = 0.3276; I^2 = 73.5% [0.0%; 94.0%]; H = 1.94 [1.00; 4.09]
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 3.77    1  0.0521
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_dominant)
+> 
+> # Recessive model: (AA vs Aa + aa)
+> data$Recessive_case <- data$homo1_cas
+> data$Recessive_control <- data$homo1_co
+> 
+> meta_recessive <- metabin(event.e = data$Recessive_case, n.e = data$Recessive_case + data$hetero_cas + data$homo2_cas,
++                           event.c = data$Recessive_control, n.c = data$Recessive_control + data$hetero_co + data$homo2_co,
++                           studlab = data$Study, sm = "OR", method = "MH")
+> 
+> # Print summary and create forest plot
+> summary(meta_recessive)
+                  OR           95%-CI %W(common) %W(random)
+Wang L, 2012  1.3984 [1.0894; 1.7950]       38.0       37.9
+Zheng J, 2012 1.4209 [1.1693; 1.7266]       62.0       62.1
+
+Number of studies: k = 2
+Number of observations: o = 2632 (o.e = 1295, o.c = 1337)
+Number of events: e = 1261
+
+                         OR           95%-CI    z  p-value
+Common effect model  1.4123 [1.2112; 1.6468] 4.40 < 0.0001
+Random effects model 1.4123 [1.2112; 1.6468] 4.40 < 0.0001
+
+Quantifying heterogeneity:
+ tau^2 = 0; tau = 0; I^2 = 0.0%; H = 1.00
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 0.01    1  0.9212
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_recessive)
+> 
+> # Homozygous model: (AA vs aa)
+> meta_homozygous <- metabin(event.e = data$homo1_cas, n.e = data$homo1_cas + data$homo2_cas,
++                            event.c = data$homo1_co, n.c = data$homo1_co + data$homo2_co,
++                            studlab = data$Study, sm = "OR", method = "MH")
+> 
+> # Print summary and create forest plot
+> summary(meta_homozygous)
+                  OR           95%-CI %W(common) %W(random)
+Wang L, 2012  1.3760 [0.8805; 2.1503]       43.2       46.1
+Zheng J, 2012 2.2822 [1.6095; 3.2360]       56.8       53.9
+
+Number of studies: k = 2
+Number of observations: o = 1522 (o.e = 776, o.c = 746)
+Number of events: e = 1261
+
+                         OR           95%-CI    z  p-value
+Common effect model  1.8904 [1.4381; 2.4848] 4.56 < 0.0001
+Random effects model 1.8077 [1.1027; 2.9634] 2.35   0.0189
+
+Quantifying heterogeneity:
+ tau^2 = 0.0862; tau = 0.2936; I^2 = 67.3% [0.0%; 92.6%]; H = 1.75 [1.00; 3.68]
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 3.06    1  0.0802
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_homozygous)
+> 
