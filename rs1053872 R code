@@ -1,0 +1,152 @@
+> testcountry <- read_excel("C:/Users/Admin/Downloads/Meta analysis/R code/Data for single snp.xlsx")
+> View(testcountry)
+> data <- testcountry
+> testcountry <- read_excel("C:/Users/Admin/Downloads/Meta analysis/R code/Data for single snp.xlsx")
+> View(testcountry)
+> data <- testcountry
+> head(data)
+# A tibble: 6 × 20
+    No. Study        Title country mirna snp   snp_po homo_geno_1 homo_geno_2 hetero_geno race 
+  <dbl> <chr>        <chr> <chr>   <chr> <chr> <chr>  <chr>       <chr>       <chr>       <chr>
+1    22 Bahreini F,… miR-… Iran    miR-… rs58… pre    CC          TT          CT          Iran 
+2    27 Mirabbasi R… Nove… Iran    miR-… rs12… mature GG          AA          GA          Iran 
+3    28 Sanaei S, 2… Eval… Iran    miR-… rs49… pri    TT          CC          CT          Iran 
+4    29 Bodal VK, 2… Asso… India   miR-… rs29… mature GG          CC          GC          Indi…
+5    29 Bodal VK, 2… Asso… India   miR-… rs11… mature CC          TT          CT          Indi…
+6    31 Jedlinski D… Sing… Austra… miR-… rs11… mature CC          TT          CT          Cauc…
+# ℹ 9 more variables: homo1_cas <dbl>, homo2_cas <dbl>, hetero_cas <dbl>, totalcase <dbl>,
+#   homo1_co <dbl>, homo2_co <dbl>, hetero_co <dbl>, totalcontrol <dbl>, p_HWE_co <chr>
+> specific_snp <- "rs1053872"
+> snp_data <- subset(data, snp == specific_snp)
+> 
+> data <- snp_data
+> head(data)
+# A tibble: 2 × 20
+    No. Study        Title country mirna snp   snp_po homo_geno_1 homo_geno_2 hetero_geno race 
+  <dbl> <chr>        <chr> <chr>   <chr> <chr> <chr>  <chr>       <chr>       <chr>       <chr>
+1   306 Chen J, 2014 Gene… China   miR-… rs10… pri    CC          GG          GC          China
+2   284 NTN Thanh, … Asso… Vietnam miR-… rs10… pri    CC          GG          GC          Viet…
+# ℹ 9 more variables: homo1_cas <dbl>, homo2_cas <dbl>, hetero_cas <dbl>, totalcase <dbl>,
+#   homo1_co <dbl>, homo2_co <dbl>, hetero_co <dbl>, totalcontrol <dbl>, p_HWE_co <chr>
+> data$C_case <- 2*data$homo1_cas + data$hetero_cas
+> data$G_case <- 2*data$homo2_cas + data$hetero_cas
+> data$C_control <- 2*data$homo1_co +data$hetero_co
+> data$G_control <- 2*data$homo2_co +data$hetero_co
+> 
+> meta_allelic <- metabin(event.e = data$C_case, n.e = data$C_case + data$G_case,
++                         event.c = data$C_control, n.c = data$C_control + data$G_control,
++                         studlab = data$Study, sm = "OR", method = "MH")
+> summary(meta_allelic)
+                    OR           95%-CI %W(common) %W(random)
+Chen J, 2014    0.8627 [0.7650; 0.9729]       93.0       65.0
+NTN Thanh, 2021 1.2317 [0.8252; 1.8383]        7.0       35.0
+
+Number of studies: k = 2
+Number of observations: o = 4664 (o.e = 2322, o.c = 2342)
+Number of events: e = 2445
+
+                         OR           95%-CI     z p-value
+Common effect model  0.8886 [0.7920; 0.9969] -2.01  0.0441
+Random effects model 0.9773 [0.7006; 1.3632] -0.14  0.8922
+
+Quantifying heterogeneity:
+ tau^2 = 0.0406; tau = 0.2015; I^2 = 64.1% [0.0%; 91.8%]; H = 1.67 [1.00; 3.49]
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 2.78    1  0.0952
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_allelic)
+> data$Dominant_case <- data$homo1_cas + data$hetero_cas
+> data$Dominant_control <- data$homo1_co + data$hetero_co
+> 
+> meta_dominant <- metabin(event.e = data$Dominant_case, n.e = data$Dominant_case + data$homo2_cas,
++                          event.c = data$Dominant_control, n.c = data$Dominant_control + data$homo2_co,
++                          studlab = data$Study, sm = "OR", method = "MH")
+> summary(meta_dominant)
+                    OR           95%-CI %W(common) %W(random)
+Chen J, 2014    0.8034 [0.6564; 0.9834]       94.3       70.3
+NTN Thanh, 2021 1.3966 [0.6797; 2.8696]        5.7       29.7
+
+Number of studies: k = 2
+Number of observations: o = 2332 (o.e = 1161, o.c = 1171)
+Number of events: e = 1804
+
+                         OR           95%-CI     z p-value
+Common effect model  0.8370 [0.6892; 1.0165] -1.80  0.0726
+Random effects model 0.9466 [0.5770; 1.5530] -0.22  0.8281
+
+Quantifying heterogeneity:
+ tau^2 = 0.0801; tau = 0.2829; I^2 = 52.4% [0.0%; 88.1%]; H = 1.45 [1.00; 2.90]
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 2.10    1  0.1474
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_dominant)
+> data$Recessive_case <- data$homo1_cas
+> data$Recessive_control <- data$homo1_co
+> meta_recessive <- metabin(event.e = data$Recessive_case, n.e = data$Recessive_case + data$hetero_cas + data$homo2_cas,
++                           event.c = data$Recessive_control, n.c = data$Recessive_control + data$hetero_co + data$homo2_co,
++                           studlab = data$Study, sm = "OR", method = "MH")
+> summary(meta_recessive)
+                    OR           95%-CI %W(common) %W(random)
+Chen J, 2014    0.8361 [0.6900; 1.0133]       91.8       74.7
+NTN Thanh, 2021 1.2459 [0.6962; 2.2296]        8.2       25.3
+
+Number of studies: k = 2
+Number of observations: o = 2332 (o.e = 1161, o.c = 1171)
+Number of events: e = 641
+
+                         OR           95%-CI     z p-value
+Common effect model  0.8697 [0.7248; 1.0436] -1.50  0.1334
+Random effects model 0.9249 [0.6585; 1.2993] -0.45  0.6527
+
+Quantifying heterogeneity:
+ tau^2 = 0.0306; tau = 0.1750; I^2 = 38.5%; H = 1.28
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 1.63    1  0.2022
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_recessive)
+> meta_homozygous <- metabin(event.e = data$homo1_cas, n.e = data$homo1_cas + data$homo2_cas,
++                            event.c = data$homo1_co, n.c = data$homo1_co + data$homo2_co,
++                            studlab = data$Study, sm = "OR", method = "MH")
+> summary(meta_homozygous)
+                    OR           95%-CI %W(common) %W(random)
+Chen J, 2014    0.7410 [0.5817; 0.9439]       94.0       64.9
+NTN Thanh, 2021 1.5114 [0.6789; 3.3647]        6.0       35.1
+
+Number of studies: k = 2
+Number of observations: o = 1169 (o.e = 584, o.c = 585)
+Number of events: e = 641
+
+                         OR           95%-CI     z p-value
+Common effect model  0.7874 [0.6250; 0.9921] -2.03  0.0427
+Random effects model 0.9516 [0.4885; 1.8535] -0.15  0.8840
+
+Quantifying heterogeneity:
+ tau^2 = 0.1630; tau = 0.4038; I^2 = 64.2% [0.0%; 91.8%]; H = 1.67 [1.00; 3.50]
+
+Test of heterogeneity:
+    Q d.f. p-value
+ 2.79    1  0.0948
+
+Details on meta-analytical method:
+- Mantel-Haenszel method (common effect model)
+- Inverse variance method (random effects model)
+- Restricted maximum-likelihood estimator for tau^2
+> forest(meta_homozygous)
